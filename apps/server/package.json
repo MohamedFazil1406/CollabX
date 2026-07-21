@@ -3,10 +3,33 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec \"node --loader ts-node/esm -r tsconfig-paths/register\" src/index.ts",
+    "start": "node --loader ts-node/esm -r tsconfig-paths/register src/index.ts",
+    "build": "rimraf dist && tsc -p tsconfig.prod.json && tsc-alias -p tsconfig.prod.json && echo Server built successfully!",
+    "test:socket": "start-server-and-test \"pnpm start\" tcp:3001 \"jest --server=local\"",
+    "test:socket:remote": "jest --server=remote",
+    "test:watch": "start-server-and-test \"pnpm start\" tcp:3001 \"jest --server=local --watch\""
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.4.2",
+    "jest-junit": "^17.0.0",
+    "nodemon": "^3.1.14",
+    "socket.io-client": "^4.8.3",
+    "start-server-and-test": "^3.0.11",
+    "ts-jest": "^29.4.11",
+    "ts-node": "^10.9.2",
+    "tsc-alias": "^1.9.1",
+    "tsconfig-paths": "^4.2.0"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@collabx/types": "workspace:*",
+    "socket.io": "^4.8.3",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.52.0"
   }
 }

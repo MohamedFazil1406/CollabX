@@ -8,8 +8,10 @@
     "jsx": "react-jsx",
     "allowJs": true,
     "types": ["bun"],
-    "rootDir": ".",
+    "rootDir": "src",
     "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
     "paths": {
       "@/*": ["./src/*"],
       "@collabx/types/*": ["../../packages/types/*"]
@@ -33,5 +35,5 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["index.ts", "src/**/*.ts"]
+  "include": ["src/index.ts", "src/**/*.ts"]
 }
