@@ -4,12 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "nodemon --watch src --ext ts --exec \"node --loader ts-node/esm -r tsconfig-paths/register\" src/index.ts",
-    "start": "node --loader ts-node/esm -r tsconfig-paths/register src/index.ts",
-    "build": "rimraf dist && tsc -p tsconfig.prod.json && tsc-alias -p tsconfig.prod.json && echo Server built successfully!",
-    "test:socket": "start-server-and-test \"pnpm start\" tcp:3001 \"jest --server=local\"",
-    "test:socket:remote": "jest --server=remote",
-    "test:watch": "start-server-and-test \"pnpm start\" tcp:3001 \"jest --server=local --watch\""
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -22,7 +18,8 @@
     "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.9.1",
-    "tsconfig-paths": "^4.2.0"
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.23.1"
   },
   "peerDependencies": {
     "typescript": "^5"

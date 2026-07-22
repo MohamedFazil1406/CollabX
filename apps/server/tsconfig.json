@@ -12,8 +12,10 @@
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
+      "@/*": ["src/*"],
       "@collabx/types/*": ["../../packages/types/*"]
     },
 
