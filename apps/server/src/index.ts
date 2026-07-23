@@ -40,7 +40,14 @@ app.get("/", (res, req) => {
 io.on("connection", (socket) => {
   socket.on("ping", () => socket.emit("pong"));
 
-  socket.on(RoomServiceMsg.CREATE, async (name: string) => {
-    roomService.create(socket, name);
-  });
+  socket.on(RoomServiceMsg.CREATE, async (name: string) =>
+    roomService.create(socket, name),
+  );
+
+  socket.on(RoomServiceMsg.JOIN, async (roomID: string, name: string) =>
+    roomService.join(socket, io, roomID, name),
+  );
+  socket.on(RoomServiceMsg.SYNC_USERS, async () =>
+    roomService.getUsersInRoom(socket, io),
+  );
 });
