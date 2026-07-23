@@ -1,5 +1,7 @@
 import {
   RoomServiceMsg,
+  CodeServiceMsg,
+  type Cursor,
   type ClientToServerEvents,
   type ServerToClientEvents,
 } from "@collabx/types";
@@ -9,6 +11,7 @@ import { App } from "uWebSockets.js";
 console.log("uWS loaded successfully");
 
 import * as roomService from "./services/room-service";
+import * as userService from "@/services/user-service";
 
 const PORT = 3000;
 
@@ -53,5 +56,8 @@ io.on("connection", (socket) => {
   );
   socket.on(RoomServiceMsg.SYNC_USERS, async () =>
     roomService.getUsersInRoom(socket, io),
+  );
+  socket.on(CodeServiceMsg.UPDATE_CURSOR, async (cursor: Cursor) =>
+    userService.updateCursor(socket, cursor),
   );
 });

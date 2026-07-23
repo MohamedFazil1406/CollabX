@@ -2,6 +2,7 @@ import type { Socket, Server } from "@/types";
 import { generateRoomID } from "@/utils/generate-room-id";
 import { RoomServiceMsg } from "@collabx/types";
 import { normalizeRoomId } from "@/utils/normalise-room-id";
+import * as userService from "@/services/user-service";
 
 const roomExist = new Map<string, string>();
 
@@ -20,6 +21,7 @@ export const getUserRoom = (socket: Socket): string | undefined => {
 };
 
 export const create = async (socket: Socket, name: string): Promise<void> => {
+  const customID = userService.connect(socket, name);
   let roomId: string;
 
   do {
@@ -27,8 +29,8 @@ export const create = async (socket: Socket, name: string): Promise<void> => {
   } while (roomExist.has(roomId));
 
   await socket.join(roomId);
-
-  socket.emit(RoomServiceMsg.CREATE, roomId, name);
+  roomUsersCache.set(roomId, { [customID]: name });
+  socket.emit(RoomServiceMsg.CREATE, roomId, customID);
 };
 
 export const join = async (
@@ -46,16 +48,15 @@ export const join = async (
     return;
   }
 
+  const customId = userService.connect(socket, name);
+
   await socket.join(normalizedRoomID);
 
-  const room = io.sockets.adapter.rooms.get(normalizedRoomID);
-  const users: Record<string, string> = room
-    ? Object.fromEntries(
-        Array.from(room).map((socketId) => [socketId, socketId]),
-      )
-    : {};
+  const users = roomUsersCache.get(normalizedRoomID) || {};
+  users[customId] = name;
+  roomUsersCache.set(normalizedRoomID, users);
 
-  socket.emit(RoomServiceMsg.JOIN, normalizedRoomID);
+  socket.emit(RoomServiceMsg.JOIN, customId);
   socket.to(normalizedRoomID).emit(RoomServiceMsg.SYNC_USERS, users);
 };
 
@@ -77,11 +78,18 @@ export const getUsersInRoom = (
       return {};
     }
 
-    users = Object.fromEntries(
-      Array.from(room).map((socketId) => [socketId, socketId]),
-    );
-
-    console.log("User details:", users);
+    users = {};
+    for (const socketId of room) {
+      const username = userService.getUsername(socketId);
+      const sock = io.sockets.sockets.get(socketId);
+      if (!sock) {
+        continue;
+      }
+      const customId = userService.getSocCustomId(sock);
+      if (username && customId) {
+        users[customId] = username;
+      }
+    }
     roomUsersCache.set(roomID, users);
   }
 
@@ -100,6 +108,11 @@ export const leave = async (socket: Socket, io: Server): Promise<void> => {
       return;
     }
 
+    const customId = userService.getSocCustomId(socket);
+    if (!customId) {
+      return;
+    }
+
     const users = roomUsersCache.get(roomID);
     if (users) {
       if (Object.keys(users).length === 0) {
@@ -115,6 +128,7 @@ export const leave = async (socket: Socket, io: Server): Promise<void> => {
     }
 
     await socket.leave(roomID);
+    userService.disconnect(socket);
   } catch {
     return;
   }
@@ -138,6 +152,7 @@ export const terminate = (socket: Socket, io: Server): void => {
     for (const socketId of room) {
       const sock = io.sockets.sockets.get(socketId);
       if (sock) {
+        userService.disconnect(socket);
         sock.leave(roomID);
       }
     }
