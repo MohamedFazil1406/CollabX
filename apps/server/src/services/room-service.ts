@@ -7,6 +7,8 @@ const roomExist = new Map<string, string>();
 
 const roomUsersCache = new Map<string, Record<string, string>>();
 
+const roomNotes = new Map<string, string>();
+
 export const getUserRoom = (socket: Socket): string | undefined => {
   // Socket.rooms is a Set, so we convert to array only for room access
   for (const room of socket.rooms) {
@@ -38,8 +40,6 @@ export const join = async (
   const normalizedRoomID = normalizeRoomId(roomID);
 
   const isActiveRoom = io.sockets.adapter.rooms.has(normalizedRoomID);
-
-  console.log("Is room Active:", isActiveRoom);
 
   if (!isActiveRoom) {
     socket.emit(RoomServiceMsg.NOT_FOUND, normalizedRoomID);
@@ -80,9 +80,69 @@ export const getUsersInRoom = (
     users = Object.fromEntries(
       Array.from(room).map((socketId) => [socketId, socketId]),
     );
+
+    console.log("User details:", users);
     roomUsersCache.set(roomID, users);
   }
 
   io.to(socket.id).emit(RoomServiceMsg.SYNC_USERS, users);
   return users;
+};
+
+export const leave = async (socket: Socket, io: Server): Promise<void> => {
+  try {
+    if (!socket || socket.disconnected) {
+      return;
+    }
+
+    const roomID = getUserRoom(socket);
+    if (!roomID) {
+      return;
+    }
+
+    const users = roomUsersCache.get(roomID);
+    if (users) {
+      if (Object.keys(users).length === 0) {
+        roomUsersCache.delete(roomID);
+      } else {
+        roomUsersCache.set(roomID, users);
+      }
+    }
+
+    if (io.sockets.adapter.rooms.has(roomID)) {
+      socket.to(roomID).emit(RoomServiceMsg.LEAVE, socket.id);
+      socket.to(roomID).emit(RoomServiceMsg.SYNC_USERS, users || {});
+    }
+
+    await socket.leave(roomID);
+  } catch {
+    return;
+  }
+};
+
+export const cleanupRoomCache = (roomID: string): void => {
+  roomUsersCache.delete(roomID);
+  roomNotes.delete(roomID);
+};
+
+export const terminate = (socket: Socket, io: Server): void => {
+  const roomID = getUserRoom(socket);
+  if (!roomID) {
+    return;
+  }
+
+  socket.to(roomID).emit(RoomServiceMsg.TERMINATE);
+
+  const room = io.sockets.adapter.rooms.get(roomID);
+  if (room) {
+    for (const socketId of room) {
+      const sock = io.sockets.sockets.get(socketId);
+      if (sock) {
+        sock.leave(roomID);
+      }
+    }
+  }
+
+  // Clean up all room data immediately (no grace period)
+  cleanupRoomCache(roomID);
 };

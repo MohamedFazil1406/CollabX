@@ -47,6 +47,10 @@ io.on("connection", (socket) => {
   socket.on(RoomServiceMsg.JOIN, async (roomID: string, name: string) =>
     roomService.join(socket, io, roomID, name),
   );
+  socket.on(RoomServiceMsg.LEAVE, async () => roomService.leave(socket, io));
+  socket.on(RoomServiceMsg.TERMINATE, async () =>
+    roomService.terminate(socket, io),
+  );
   socket.on(RoomServiceMsg.SYNC_USERS, async () =>
     roomService.getUsersInRoom(socket, io),
   );
