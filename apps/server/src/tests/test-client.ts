@@ -10,7 +10,6 @@ let roomId = "";
 
 client1.on("connect", () => {
   console.log("✅ Client 1 Connected");
-
   client1.emit(RoomServiceMsg.CREATE, "Fazil");
 });
 
@@ -21,7 +20,6 @@ client1.on(RoomServiceMsg.CREATE, (id: string, name: string) => {
   console.log("Room ID:", roomId);
   console.log("Created By:", name);
 
-  // Client 2 joins
   client2.emit(RoomServiceMsg.JOIN, roomId, "Deepak");
 });
 
@@ -33,8 +31,12 @@ client1.on(RoomServiceMsg.LEAVE, (id: string) => {
   console.log("❌ Client 1 Received Leave:", id);
 });
 
-client1.on(CodeServiceMsg.UPDATE_CURSOR, (customId, cursor) => {
-  console.log("🖱 Client 1 Cursor:", customId, cursor);
+client1.on(CodeServiceMsg.UPDATE_CODE, (code: string) => {
+  console.log("📄 Client 1 Received Code:", code);
+});
+
+client1.on(CodeServiceMsg.SYNC_CODE, (code: string) => {
+  console.log("📄 Client 1 Synced Code:", code);
 });
 
 client1.on(RoomServiceMsg.TERMINATE, () => {
@@ -51,41 +53,52 @@ client2.on(RoomServiceMsg.JOIN, (id: string) => {
   console.log("\n========== CLIENT 2 JOINED ==========");
   console.log("Joined Room:", id);
 
-  // Test cursor update
+  // Update code
   setTimeout(() => {
-    console.log("\n➡️ Client 2 Moving Cursor");
+    console.log("\n📄 Client 1 Updating Code");
 
-    client2.emit(CodeServiceMsg.UPDATE_CURSOR, {
-      line: 5,
-      ch: 10,
-    });
+    client1.emit(CodeServiceMsg.UPDATE_CODE, "<h1>Hello World</h1>");
   }, 1000);
 
-  // Test leave
+  // Request code sync
+  setTimeout(() => {
+    console.log("\n📥 Client 2 Requesting Code Sync");
+
+    client2.emit(CodeServiceMsg.SYNC_CODE);
+  }, 2500);
+
+  // Leave room
   setTimeout(() => {
     console.log("\n➡️ Client 2 Leaving");
-    client2.emit(RoomServiceMsg.LEAVE);
-  }, 3000);
 
-  // Test terminate
+    client2.emit(RoomServiceMsg.LEAVE);
+  }, 4500);
+
+  // Terminate room
   setTimeout(() => {
     console.log("\n💥 Client 1 Terminating Room");
+
     client1.emit(RoomServiceMsg.TERMINATE);
-  }, 5000);
+  }, 6500);
 
   // Try joining again
   setTimeout(() => {
     console.log("\n🔄 Client 2 Trying To Join Again");
+
     client2.emit(RoomServiceMsg.JOIN, roomId, "Deepak");
-  }, 7000);
+  }, 8500);
 });
 
 client2.on(RoomServiceMsg.SYNC_USERS, (users) => {
   console.log("👥 Client 2 Users:", users);
 });
 
-client2.on(CodeServiceMsg.UPDATE_CURSOR, (customId, cursor) => {
-  console.log("🖱 Client 2 Cursor:", customId, cursor);
+client2.on(CodeServiceMsg.UPDATE_CODE, (code: string) => {
+  console.log("📄 Client 2 Received Code:", code);
+});
+
+client2.on(CodeServiceMsg.SYNC_CODE, (code: string) => {
+  console.log("📄 Client 2 Synced Code:", code);
 });
 
 client2.on(RoomServiceMsg.TERMINATE, () => {
