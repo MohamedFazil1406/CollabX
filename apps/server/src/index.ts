@@ -1,6 +1,8 @@
 import {
   RoomServiceMsg,
   CodeServiceMsg,
+  PointerServiceMsg,
+  type Pointer,
   type Cursor,
   type EditOp,
   type ClientToServerEvents,
@@ -14,6 +16,7 @@ console.log("uWS loaded successfully");
 import * as roomService from "./services/room-service";
 import * as userService from "@/services/user-service";
 import * as codeService from "@/services/code-service";
+import * as pointerService from "@/services/pointer-service";
 
 const PORT = 3000;
 
@@ -71,4 +74,8 @@ io.on("connection", (socket) => {
   socket.on(CodeServiceMsg.UPDATE_CODE, async (op: EditOp) =>
     codeService.updateCode(socket, op),
   );
+  socket.on(PointerServiceMsg.POINTER, (pointer: Pointer) =>
+    pointerService.updatePointer(socket, pointer),
+  );
+  socket.on("disconnecting", () => roomService.leave(socket, io));
 });

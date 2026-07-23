@@ -1,14 +1,3 @@
-/**
- * Code synchronization service for collaborative editing.
- * Features:
- * - Room data management
- * - Code update handling
- * - Language state sync
- * - Real-time broadcast
- *
- * By Dulapah Vibulsanti (https://dulapahv.dev)
- */
-
 import { CodeServiceMsg } from "@collabx/types";
 import type { EditOp } from "@collabx/types";
 import type { Server, Socket } from "@/types";
