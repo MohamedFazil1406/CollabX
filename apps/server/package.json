@@ -5,18 +5,22 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts"
+    "start": "tsx src/index.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "coverage": "jest --coverage"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/jest": "^30.0.0",
+    "@types/node": "^22.15.3",
     "@types/simple-peer": "^9.11.9",
     "jest": "^30.4.2",
     "jest-junit": "^17.0.0",
     "nodemon": "^3.1.14",
     "socket.io-client": "^4.8.3",
     "start-server-and-test": "^3.0.11",
-    "ts-jest": "^29.4.11",
+    "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.9.1",
     "tsconfig-paths": "^4.2.0",

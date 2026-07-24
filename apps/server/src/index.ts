@@ -2,7 +2,7 @@ import {
   RoomServiceMsg,
   CodeServiceMsg,
   PointerServiceMsg,
-  ScrollServiceMsg
+  ScrollServiceMsg,
   type Scroll,
   type Pointer,
   type Cursor,
@@ -19,7 +19,7 @@ import * as roomService from "./services/room-service";
 import * as userService from "@/services/user-service";
 import * as codeService from "@/services/code-service";
 import * as pointerService from "@/services/pointer-service";
-import * as scrollService from "@/services/scroll-service"
+import * as scrollService from "@/services/scroll-service";
 
 const PORT = 3000;
 
@@ -77,9 +77,9 @@ io.on("connection", (socket) => {
   socket.on(CodeServiceMsg.UPDATE_CODE, async (op: EditOp) =>
     codeService.updateCode(socket, op),
   );
-   socket.on(ScrollServiceMsg.UPDATE_SCROLL, async (scroll: Scroll) =>
-     scrollService.updateScroll(socket, scroll),
-   );
+  socket.on(ScrollServiceMsg.UPDATE_SCROLL, async (scroll: Scroll) =>
+    scrollService.updateScroll(socket, scroll),
+  );
   socket.on(PointerServiceMsg.POINTER, (pointer: Pointer) =>
     pointerService.updatePointer(socket, pointer),
   );

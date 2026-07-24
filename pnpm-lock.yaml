@@ -94,6 +94,9 @@ importers:
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.20.1
       '@types/simple-peer':
         specifier: ^9.11.9
         version: 9.11.9
@@ -113,7 +116,7 @@ importers:
         specifier: ^3.0.11
         version: 3.0.11
       ts-jest:
-        specifier: ^29.4.11
+        specifier: ^29.4.12
         version: 29.4.12(@babel/core@7.29.7)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.7))(jest-util@30.4.1)(jest@30.4.2(@types/node@22.20.1)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.2)))(typescript@5.9.2)
       ts-node:
         specifier: ^10.9.2
