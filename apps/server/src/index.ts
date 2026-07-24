@@ -1,8 +1,10 @@
+import { SignalData } from "simple-peer";
 import {
   RoomServiceMsg,
   CodeServiceMsg,
   PointerServiceMsg,
   ScrollServiceMsg,
+  StreamServiceMsg,
   type Scroll,
   type Pointer,
   type Cursor,
@@ -20,6 +22,7 @@ import * as userService from "@/services/user-service";
 import * as codeService from "@/services/code-service";
 import * as pointerService from "@/services/pointer-service";
 import * as scrollService from "@/services/scroll-service";
+import * as webRTCService from "@/services/webrtc-service";
 
 const PORT = 3000;
 
@@ -79,6 +82,23 @@ io.on("connection", (socket) => {
   );
   socket.on(ScrollServiceMsg.UPDATE_SCROLL, async (scroll: Scroll) =>
     scrollService.updateScroll(socket, scroll),
+  );
+  socket.on(StreamServiceMsg.STREAM_READY, () =>
+    webRTCService.onStreamReady(socket),
+  );
+  socket.on(
+    StreamServiceMsg.SIGNAL,
+    (data: { signal: SignalData; targetUserID: string }) =>
+      webRTCService.handleSignal(socket, data),
+  );
+  socket.on(StreamServiceMsg.CAMERA_OFF, () =>
+    webRTCService.onCameraOff(socket),
+  );
+  socket.on(StreamServiceMsg.MIC_STATE, (micOn: boolean) =>
+    webRTCService.handleMicState(socket, micOn),
+  );
+  socket.on(StreamServiceMsg.SPEAKER_STATE, (speakersOn: boolean) =>
+    webRTCService.handleSpeakerState(socket, speakersOn),
   );
   socket.on(PointerServiceMsg.POINTER, (pointer: Pointer) =>
     pointerService.updatePointer(socket, pointer),
