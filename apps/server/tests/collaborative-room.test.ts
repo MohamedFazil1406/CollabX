@@ -1,3 +1,4 @@
+import { describe, it, beforeAll, afterAll, expect } from "@jest/globals";
 import { io, Socket } from "socket.io-client";
 import { RoomServiceMsg } from "@collabx/types";
 
@@ -43,7 +44,7 @@ describe("Collaborative Room Service", () => {
           expect(typeof customId).toBe("string");
 
           done();
-        } catch (err) {
+        } catch (err: any) {
           done(err);
         }
       },
@@ -60,7 +61,7 @@ describe("Collaborative Room Service", () => {
         expect(Object.values(users)).toContain("Ahmed");
 
         done();
-      } catch (err) {
+      } catch (err: any) {
         done(err);
       }
     });
@@ -80,7 +81,7 @@ describe("Collaborative Room Service", () => {
         expect(typeof socketId).toBe("string");
 
         done();
-      } catch (err) {
+      } catch (err: any) {
         done(err);
       }
     });

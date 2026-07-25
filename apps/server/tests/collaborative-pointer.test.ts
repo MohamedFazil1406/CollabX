@@ -1,3 +1,4 @@
+import { describe, it, beforeAll, afterAll, expect } from "@jest/globals";
 import { io, Socket } from "socket.io-client";
 import {
   PointerServiceMsg,
@@ -53,7 +54,7 @@ describe("Collaborative Pointer Service", () => {
           expect(customId).toBeDefined();
           expect(received).toEqual(pointer);
           done();
-        } catch (err) {
+        } catch (err: any) {
           done(err);
         }
       },
