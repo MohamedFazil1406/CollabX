@@ -1,3 +1,4 @@
+import { describe, it, beforeAll, afterAll, expect } from "@jest/globals";
 import { io, Socket } from "socket.io-client";
 import { RoomServiceMsg, StreamServiceMsg } from "@collabx/types";
 
@@ -56,7 +57,7 @@ describe("Collaborative Stream Service", () => {
           expect(payload.userID).toBeDefined();
           expect(payload.signal).toEqual(signal);
           done();
-        } catch (err) {
+        } catch (err: any) {
           done(err);
         }
       },
@@ -73,7 +74,7 @@ describe("Collaborative Stream Service", () => {
       try {
         expect(userId).toBeDefined();
         done();
-      } catch (err) {
+      } catch (err: any) {
         done(err);
       }
     });
@@ -89,7 +90,7 @@ describe("Collaborative Stream Service", () => {
           expect(payload.userID).toBeDefined();
           expect(payload.micOn).toBe(true);
           done();
-        } catch (err) {
+        } catch (err: any) {
           done(err);
         }
       },
@@ -106,7 +107,7 @@ describe("Collaborative Stream Service", () => {
           expect(payload.userID).toBeDefined();
           expect(payload.speakersOn).toBe(false);
           done();
-        } catch (err) {
+        } catch (err: any) {
           done(err);
         }
       },

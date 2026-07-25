@@ -11,6 +11,7 @@
     "coverage": "jest --coverage"
   },
   "devDependencies": {
+    "@jest/globals": "^30.4.1",
     "@types/bun": "latest",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.15.3",

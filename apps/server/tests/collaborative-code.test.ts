@@ -1,3 +1,4 @@
+import { describe, it, beforeAll, afterAll, expect } from "@jest/globals";
 import { io, Socket } from "socket.io-client";
 import { CodeServiceMsg, RoomServiceMsg, type EditOp } from "@collabx/types";
 
@@ -46,7 +47,7 @@ describe("Collaborative Code Service", () => {
       try {
         expect(received).toEqual(operation);
         done();
-      } catch (err) {
+      } catch (err: any) {
         done(err);
       }
     });

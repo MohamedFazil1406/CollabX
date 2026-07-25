@@ -1,3 +1,4 @@
+import { describe, it, beforeAll, afterAll, expect } from "@jest/globals";
 import { io, Socket } from "socket.io-client";
 import { ScrollServiceMsg, RoomServiceMsg, type Scroll } from "@collabx/types";
 
@@ -49,7 +50,7 @@ describe("Collaborative Scroll Service", () => {
           expect(customId).toBeDefined();
           expect(received).toEqual(scroll);
           done();
-        } catch (err) {
+        } catch (err: any) {
           done(err);
         }
       },
