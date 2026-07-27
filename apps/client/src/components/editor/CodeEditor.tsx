@@ -7,12 +7,15 @@ import type * as Monaco from "monaco-editor";
 import { socket } from "@/socket/client";
 import { useEditorStore } from "@/store/editor";
 import { useCursorStore } from "@/store/cursors";
-
 import { usePointerStore } from "@/store/pointers";
+import RemoteSelectionLayer from "@/components/editor/RemoteSelectionLayer";
+import PointerLayer from "@/components/editor/PointerLayer";
+import RemoteCursorLayer from "@/components/editor/RemoteCursorLayer";
+import { useRemoteCursor } from "@/hooks/useRemoteCursors";
+import { useRemotePointer } from "@/hooks/useRemotePointer";
 
 import {
   CodeServiceMsg,
-  RoomServiceMsg,
   PointerServiceMsg,
   type Cursor,
   type EditOp,
@@ -23,16 +26,14 @@ interface CodeEditorProps {
 }
 
 export default function CodeEditor({ roomId }: CodeEditorProps) {
-  const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
+  useRemoteCursor();
+  useRemotePointer();
 
-  const decorationIds = useRef<string[]>([]);
+  const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const isRemoteUpdate = useRef(false);
 
   const { language, setLanguage } = useEditorStore();
-
-  const { cursors, updateCursor, removeCursor } = useCursorStore();
-
-  const { updatePointer, removePointer } = usePointerStore();
+  const { cursors } = useCursorStore();
 
   const handleMount: OnMount = (editor) => {
     editorRef.current = editor;
@@ -75,26 +76,26 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     const domNode = editor.getDomNode();
 
     if (domNode) {
-      domNode.addEventListener("mousemove", (event) => {
+      const handleMouseMove = (event: MouseEvent) => {
         const rect = domNode.getBoundingClientRect();
 
         socket.emit(PointerServiceMsg.POINTER, {
           x: event.clientX - rect.left,
           y: event.clientY - rect.top,
         });
+      };
+
+      domNode.addEventListener("mousemove", handleMouseMove);
+
+      editor.onDidDispose(() => {
+        domNode.removeEventListener("mousemove", handleMouseMove);
       });
     }
   };
 
-  useEffect(() => {
-    const handlePointer = (
-      userId: string,
-      pointer: { x: number; y: number },
-    ) => {
-      updatePointer(userId, [pointer.x, pointer.y]);
-      socket.off(PointerServiceMsg.POINTER, handlePointer);
-    };
-  }, [updatePointer]);
+  /**
+   * Remote pointer updates
+   */
 
   /**
    * Initial code sync
@@ -162,37 +163,6 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   }, [setLanguage]);
 
   /**
-   * Remote cursor updates
-   */
-  useEffect(() => {
-    const handleCursor = (userId: string, cursor: Cursor) => {
-      updateCursor(userId, cursor);
-    };
-
-    socket.on(CodeServiceMsg.UPDATE_CURSOR, handleCursor);
-
-    return () => {
-      socket.off(CodeServiceMsg.UPDATE_CURSOR, handleCursor);
-    };
-  }, [updateCursor]);
-
-  /**
-   * Remove cursor when user leaves
-   */
-  useEffect(() => {
-    const handleLeave = (userId: string) => {
-      removeCursor(userId);
-      removePointer(userId);
-    };
-
-    socket.on(RoomServiceMsg.LEAVE, handleLeave);
-
-    return () => {
-      socket.off(RoomServiceMsg.LEAVE, handleLeave);
-    };
-  }, [removeCursor, removePointer]);
-
-  /**
    * Render remote cursors
    */
   useEffect(() => {
@@ -220,11 +190,6 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
         },
       };
     });
-
-    decorationIds.current = editor.deltaDecorations(
-      decorationIds.current,
-      decorations,
-    );
   }, [cursors]);
 
   return (
@@ -243,6 +208,9 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
           },
         }}
       />
+      <RemoteCursorLayer editor={editorRef.current} />
+      <RemoteSelectionLayer editor={editorRef.current} />
+      <PointerLayer />
     </div>
   );
 }

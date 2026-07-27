@@ -7,16 +7,11 @@ import { useCursorStore } from "@/store/cursors";
 
 import { CodeServiceMsg, RoomServiceMsg, type Cursor } from "@collabx/types";
 
-interface CursorPayload {
-  userID: string;
-  cursor: Cursor;
-}
-
 export function useRemoteCursor() {
   const { updateCursor, removeCursor } = useCursorStore();
 
   useEffect(() => {
-    const handleCursor = ({ userID, cursor }: CursorPayload) => {
+    const handleCursor = (userID: string, cursor: Cursor) => {
       updateCursor(userID, cursor);
     };
 
@@ -25,12 +20,10 @@ export function useRemoteCursor() {
     };
 
     socket.on(CodeServiceMsg.UPDATE_CURSOR, handleCursor);
-
     socket.on(RoomServiceMsg.LEAVE, handleLeave);
 
     return () => {
       socket.off(CodeServiceMsg.UPDATE_CURSOR, handleCursor);
-
       socket.off(RoomServiceMsg.LEAVE, handleLeave);
     };
   }, [updateCursor, removeCursor]);
