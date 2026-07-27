@@ -3,10 +3,10 @@
 import { useEffect, useRef } from "react";
 import Editor, { OnMount } from "@monaco-editor/react";
 import type * as Monaco from "monaco-editor";
-
+import { useCursorStore } from "@/store/cursors";
 import { socket } from "@/socket/client";
 import { useEditorStore } from "@/store/editor";
-import { CodeServiceMsg, type EditOp } from "@collabx/types";
+import { CodeServiceMsg, type EditOp, type Cursor } from "@collabx/types";
 
 interface CodeEditorProps {
   roomId: string;
@@ -18,6 +18,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   const isRemoteUpdate = useRef(false);
 
   const { language, setLanguage } = useEditorStore();
+  const { updateCursor } = useCursorStore();
 
   const handleMount: OnMount = (editor) => {
     editorRef.current = editor;
@@ -43,6 +44,28 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
 
         socket.emit(CodeServiceMsg.UPDATE_CODE, operation);
       }
+    });
+
+    editor.onDidChangeCursorSelection((e) => {
+      const selection = e.selection;
+
+      const cursor: Cursor = [
+        selection.positionLineNumber,
+        selection.positionColumn,
+        selection.startLineNumber,
+        selection.startColumn,
+        selection.endLineNumber,
+        selection.endColumn,
+      ];
+
+      socket.emit(CodeServiceMsg.UPDATE_CURSOR, cursor);
+    });
+
+    editor.onDidChangeCursorPosition((e) => {
+      socket.emit(CodeServiceMsg.UPDATE_CURSOR, {
+        lineNumber: e.position.lineNumber,
+        column: e.position.column,
+      });
     });
   };
 
@@ -111,6 +134,18 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
       socket.off(CodeServiceMsg.UPDATE_LANG, handleLanguage);
     };
   }, [setLanguage]);
+
+  useEffect(() => {
+    const handleCursor = (userId: string, cursor: Cursor) => {
+      updateCursor(userId, cursor);
+    };
+
+    socket.on(CodeServiceMsg.UPDATE_CURSOR, handleCursor);
+
+    return () => {
+      socket.off(CodeServiceMsg.UPDATE_CURSOR, handleCursor);
+    };
+  }, [updateCursor]);
 
   return (
     <div className="h-screen">

@@ -88,7 +88,7 @@ io.on("connection", (socket) => {
   socket.on("ping", () => socket.emit("pong"));
 
   socket.on(RoomServiceMsg.CREATE, async (name: string) =>
-    roomService.create(socket, name),
+    roomService.create(socket, name, io),
   );
 
   socket.on(RoomServiceMsg.JOIN, async (roomID: string, name: string) =>

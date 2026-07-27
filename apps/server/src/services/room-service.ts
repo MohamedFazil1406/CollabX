@@ -69,7 +69,11 @@ export const getUserRoom = (socket: Socket): string | undefined => {
 /**
  * Creates a new room and joins the socket to it.
  */
-export const create = async (socket: Socket, name: string): Promise<void> => {
+export const create = async (
+  socket: Socket,
+  name: string,
+  io: Server,
+): Promise<void> => {
   const customId = userService.connect(socket, name);
 
   // Generate unique room ID
@@ -84,6 +88,8 @@ export const create = async (socket: Socket, name: string): Promise<void> => {
   roomUsersCache.set(roomID, { [customId]: name });
 
   socket.emit(RoomServiceMsg.CREATE, roomID, customId);
+
+  io.to(roomID).emit(RoomServiceMsg.SYNC_USERS, roomUsersCache.get(roomID)!);
 };
 
 /**
@@ -119,7 +125,7 @@ export const join = async (
   roomUsersCache.set(normalizedRoomID, users);
 
   socket.emit(RoomServiceMsg.JOIN, customId);
-  socket.to(normalizedRoomID).emit(RoomServiceMsg.SYNC_USERS, users);
+  io.to(normalizedRoomID).emit(RoomServiceMsg.SYNC_USERS, users);
 };
 
 /**
