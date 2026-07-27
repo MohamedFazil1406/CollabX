@@ -3,10 +3,17 @@
 import { useEffect, useRef } from "react";
 import Editor, { OnMount } from "@monaco-editor/react";
 import type * as Monaco from "monaco-editor";
-import { useCursorStore } from "@/store/cursors";
+
 import { socket } from "@/socket/client";
 import { useEditorStore } from "@/store/editor";
-import { CodeServiceMsg, type EditOp, type Cursor } from "@collabx/types";
+import { useCursorStore } from "@/store/cursors";
+
+import {
+  CodeServiceMsg,
+  RoomServiceMsg,
+  type Cursor,
+  type EditOp,
+} from "@collabx/types";
 
 interface CodeEditorProps {
   roomId: string;
@@ -15,15 +22,16 @@ interface CodeEditorProps {
 export default function CodeEditor({ roomId }: CodeEditorProps) {
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
 
+  const decorationIds = useRef<string[]>([]);
   const isRemoteUpdate = useRef(false);
 
   const { language, setLanguage } = useEditorStore();
-  const { updateCursor } = useCursorStore();
+
+  const { cursors, updateCursor, removeCursor } = useCursorStore();
 
   const handleMount: OnMount = (editor) => {
     editorRef.current = editor;
 
-    // Request current room state
     socket.emit(CodeServiceMsg.SYNC_CODE);
     socket.emit(CodeServiceMsg.SYNC_LANG);
 
@@ -47,25 +55,16 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     });
 
     editor.onDidChangeCursorSelection((e) => {
-      const selection = e.selection;
-
       const cursor: Cursor = [
-        selection.positionLineNumber,
-        selection.positionColumn,
-        selection.startLineNumber,
-        selection.startColumn,
-        selection.endLineNumber,
-        selection.endColumn,
+        e.selection.positionLineNumber,
+        e.selection.positionColumn,
+        e.selection.startLineNumber,
+        e.selection.startColumn,
+        e.selection.endLineNumber,
+        e.selection.endColumn,
       ];
 
       socket.emit(CodeServiceMsg.UPDATE_CURSOR, cursor);
-    });
-
-    editor.onDidChangeCursorPosition((e) => {
-      socket.emit(CodeServiceMsg.UPDATE_CURSOR, {
-        lineNumber: e.position.lineNumber,
-        column: e.position.column,
-      });
     });
   };
 
@@ -88,12 +87,11 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   }, []);
 
   /**
-   * Remote code updates
+   * Remote edits
    */
   useEffect(() => {
     const handleUpdateCode = (operation: EditOp) => {
       const editor = editorRef.current;
-
       if (!editor) return;
 
       const [text, sl, sc, el, ec] = operation;
@@ -121,7 +119,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   }, []);
 
   /**
-   * Language updates
+   * Language sync
    */
   useEffect(() => {
     const handleLanguage = (lang: string) => {
@@ -135,6 +133,9 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     };
   }, [setLanguage]);
 
+  /**
+   * Remote cursor updates
+   */
   useEffect(() => {
     const handleCursor = (userId: string, cursor: Cursor) => {
       updateCursor(userId, cursor);
@@ -146,6 +147,56 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
       socket.off(CodeServiceMsg.UPDATE_CURSOR, handleCursor);
     };
   }, [updateCursor]);
+
+  /**
+   * Remove cursor when user leaves
+   */
+  useEffect(() => {
+    const handleLeave = (userId: string) => {
+      removeCursor(userId);
+    };
+
+    socket.on(RoomServiceMsg.LEAVE, handleLeave);
+
+    return () => {
+      socket.off(RoomServiceMsg.LEAVE, handleLeave);
+    };
+  }, [removeCursor]);
+
+  /**
+   * Render remote cursors
+   */
+  useEffect(() => {
+    const editor = editorRef.current;
+
+    if (!editor) return;
+
+    const decorations: Monaco.editor.IModelDeltaDecoration[] = Object.entries(
+      cursors,
+    ).map(([userId, cursor]) => {
+      const [line, column] = cursor;
+
+      return {
+        range: {
+          startLineNumber: line,
+          startColumn: column,
+          endLineNumber: line,
+          endColumn: column,
+        },
+        options: {
+          className: "remote-cursor",
+          hoverMessage: {
+            value: `User: ${userId}`,
+          },
+        },
+      };
+    });
+
+    decorationIds.current = editor.deltaDecorations(
+      decorationIds.current,
+      decorations,
+    );
+  }, [cursors]);
 
   return (
     <div className="h-screen">
