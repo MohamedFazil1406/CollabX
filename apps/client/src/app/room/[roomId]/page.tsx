@@ -4,8 +4,8 @@ import { useParams } from "next/navigation";
 
 import CodeEditor from "@/components/editor/CodeEditor";
 import UserList from "@/components/users/UserList";
-import VideoGrid from "@/components/video/VideoGrid";
 import TerminalPanel from "@/components/terminal/TerminalPanel";
+import RightSidebar from "@/components/layout/RightSidebar";
 
 export default function RoomPage() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -20,9 +20,7 @@ export default function RoomPage() {
             <CodeEditor roomId={roomId} />
           </div>
 
-          <aside className="w-72 shrink-0 border-l border-zinc-800 bg-zinc-950 p-4">
-            <VideoGrid />
-          </aside>
+          <RightSidebar />
         </div>
 
         <TerminalPanel />
