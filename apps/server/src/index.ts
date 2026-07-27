@@ -12,7 +12,11 @@ import {
   type ClientToServerEvents,
   type ServerToClientEvents,
 } from "@collabx/types";
-
+import {
+  ALLOWED_ORIGINS,
+  getCorsHeaders,
+  isVercelDeployment,
+} from "./cors-config";
 import { Server } from "socket.io";
 import { App } from "uWebSockets.js";
 console.log("uWS loaded successfully");
@@ -28,7 +32,36 @@ const PORT = 3001;
 
 const app = App();
 
-const io = new Server<ClientToServerEvents, ServerToClientEvents>({});
+const io = new Server<ClientToServerEvents, ServerToClientEvents>({
+  cors: {
+    origin: (origin, callback) => {
+      if (process.env.NODE_ENV === "development") {
+        callback(null, true);
+        return;
+      }
+
+      if (
+        !origin ||
+        ALLOWED_ORIGINS.includes(origin as (typeof ALLOWED_ORIGINS)[number]) ||
+        isVercelDeployment(origin)
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Origin not allowed"));
+      }
+    },
+    methods: ["GET", "POST"], // Socket.IO needs both
+    credentials: true,
+  },
+  transports: ["websocket", "polling"],
+  // Allow larger payloads for pasting large code blocks (default is 1MB)
+  maxHttpBufferSize: 5e6, // 5MB
+  // Recover socket state (rooms, missed packets) after brief disconnects
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+    skipMiddlewares: true,
+  },
+});
 
 io.attachApp(app);
 

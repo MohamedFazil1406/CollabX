@@ -1,15 +1,14 @@
-interface Props {
-  params: Promise<{
-    roomId: string;
-  }>;
-}
+"use client";
 
-export default async function RoomPage({ params }: Props) {
-  const { roomId } = await params;
+import { useParams } from "next/navigation";
+import CodeEditor from "@/components/editor/CodeEditor";
+
+export default function RoomPage() {
+  const { roomId } = useParams<{ roomId: string }>();
 
   return (
-    <main className="flex h-screen items-center justify-center">
-      <h1 className="text-4xl font-bold">Room: {roomId}</h1>
+    <main className="h-screen">
+      <CodeEditor roomId={roomId} />
     </main>
   );
 }

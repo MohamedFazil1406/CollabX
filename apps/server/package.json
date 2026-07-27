@@ -13,6 +13,7 @@
   "devDependencies": {
     "@jest/globals": "^30.4.1",
     "@types/bun": "latest",
+    "@types/cors": "^2.8.19",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.15.3",
     "@types/simple-peer": "^9.11.9",
@@ -32,6 +33,7 @@
   },
   "dependencies": {
     "@collabx/types": "workspace:*",
+    "cors": "^2.8.6",
     "simple-peer": "^9.11.1",
     "socket.io": "^4.8.3",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.52.0",
