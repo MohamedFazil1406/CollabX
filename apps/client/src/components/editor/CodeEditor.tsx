@@ -8,9 +8,12 @@ import { socket } from "@/socket/client";
 import { useEditorStore } from "@/store/editor";
 import { useCursorStore } from "@/store/cursors";
 
+import { usePointerStore } from "@/store/pointers";
+
 import {
   CodeServiceMsg,
   RoomServiceMsg,
+  PointerServiceMsg,
   type Cursor,
   type EditOp,
 } from "@collabx/types";
@@ -28,6 +31,8 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   const { language, setLanguage } = useEditorStore();
 
   const { cursors, updateCursor, removeCursor } = useCursorStore();
+
+  const { updatePointer, removePointer } = usePointerStore();
 
   const handleMount: OnMount = (editor) => {
     editorRef.current = editor;
@@ -66,7 +71,30 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
 
       socket.emit(CodeServiceMsg.UPDATE_CURSOR, cursor);
     });
+
+    const domNode = editor.getDomNode();
+
+    if (domNode) {
+      domNode.addEventListener("mousemove", (event) => {
+        const rect = domNode.getBoundingClientRect();
+
+        socket.emit(PointerServiceMsg.POINTER, {
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        });
+      });
+    }
   };
+
+  useEffect(() => {
+    const handlePointer = (
+      userId: string,
+      pointer: { x: number; y: number },
+    ) => {
+      updatePointer(userId, [pointer.x, pointer.y]);
+      socket.off(PointerServiceMsg.POINTER, handlePointer);
+    };
+  }, [updatePointer]);
 
   /**
    * Initial code sync
@@ -154,6 +182,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   useEffect(() => {
     const handleLeave = (userId: string) => {
       removeCursor(userId);
+      removePointer(userId);
     };
 
     socket.on(RoomServiceMsg.LEAVE, handleLeave);
@@ -161,7 +190,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     return () => {
       socket.off(RoomServiceMsg.LEAVE, handleLeave);
     };
-  }, [removeCursor]);
+  }, [removeCursor, removePointer]);
 
   /**
    * Render remote cursors
@@ -199,7 +228,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   }, [cursors]);
 
   return (
-    <div className="h-screen">
+    <div className="relative h-screen">
       <Editor
         height="100%"
         theme="vs-dark"
