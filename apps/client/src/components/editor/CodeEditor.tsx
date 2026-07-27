@@ -193,7 +193,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   }, [cursors]);
 
   return (
-    <div className="relative h-screen">
+    <div className="relative h-full min-h-0">
       <Editor
         height="100%"
         theme="vs-dark"
