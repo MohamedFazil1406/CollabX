@@ -24,7 +24,7 @@ import * as pointerService from "@/services/pointer-service";
 import * as scrollService from "@/services/scroll-service";
 import * as webRTCService from "@/services/webrtc-service";
 
-const PORT = 3000;
+const PORT = 3001;
 
 const app = App();
 
