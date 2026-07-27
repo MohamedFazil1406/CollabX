@@ -6,13 +6,12 @@ import type * as Monaco from "monaco-editor";
 
 import { socket } from "@/socket/client";
 import { useEditorStore } from "@/store/editor";
-import { useCursorStore } from "@/store/cursors";
-import { usePointerStore } from "@/store/pointers";
 import RemoteSelectionLayer from "@/components/editor/RemoteSelectionLayer";
 import PointerLayer from "@/components/editor/PointerLayer";
 import RemoteCursorLayer from "@/components/editor/RemoteCursorLayer";
 import { useRemoteCursor } from "@/hooks/useRemoteCursors";
 import { useRemotePointer } from "@/hooks/useRemotePointer";
+import { useActiveFile } from "@/hooks/useActiveFile";
 
 import {
   CodeServiceMsg,
@@ -33,7 +32,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   const isRemoteUpdate = useRef(false);
 
   const { language, setLanguage } = useEditorStore();
-  const { cursors } = useCursorStore();
+  const { activeFile, setContent } = useActiveFile();
 
   const handleMount: OnMount = (editor) => {
     editorRef.current = editor;
@@ -46,6 +45,8 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
         isRemoteUpdate.current = false;
         return;
       }
+
+      setContent(editor.getValue());
 
       for (const change of event.changes) {
         const operation: EditOp = [
@@ -92,10 +93,6 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
       });
     }
   };
-
-  /**
-   * Remote pointer updates
-   */
 
   /**
    * Initial code sync
@@ -163,34 +160,23 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   }, [setLanguage]);
 
   /**
-   * Render remote cursors
+   * Load selected file into Monaco
    */
   useEffect(() => {
-    const editor = editorRef.current;
+    if (!editorRef.current || !activeFile) return;
 
-    if (!editor) return;
+    isRemoteUpdate.current = true;
+    editorRef.current.setValue(activeFile.content);
+  }, [activeFile]);
 
-    const decorations: Monaco.editor.IModelDeltaDecoration[] = Object.entries(
-      cursors,
-    ).map(([userId, cursor]) => {
-      const [line, column] = cursor;
+  /**
+   * Update editor language when switching files
+   */
+  useEffect(() => {
+    if (!activeFile) return;
 
-      return {
-        range: {
-          startLineNumber: line,
-          startColumn: column,
-          endLineNumber: line,
-          endColumn: column,
-        },
-        options: {
-          className: "remote-cursor",
-          hoverMessage: {
-            value: `User: ${userId}`,
-          },
-        },
-      };
-    });
-  }, [cursors]);
+    setLanguage(activeFile.language);
+  }, [activeFile, setLanguage]);
 
   return (
     <div className="relative h-full min-h-0">
@@ -198,7 +184,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
         height="100%"
         theme="vs-dark"
         language={language}
-        defaultValue=""
+        value={activeFile?.content ?? ""}
         onMount={handleMount}
         options={{
           automaticLayout: true,
@@ -208,6 +194,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
           },
         }}
       />
+
       <RemoteCursorLayer editor={editorRef.current} />
       <RemoteSelectionLayer editor={editorRef.current} />
       <PointerLayer />

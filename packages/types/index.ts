@@ -4,3 +4,4 @@ export * from "./src/pointer";
 export * from "./src/scroll";
 export * from "./src/terminal";
 export * from "./src/socket-event";
+export * from "./src/file";

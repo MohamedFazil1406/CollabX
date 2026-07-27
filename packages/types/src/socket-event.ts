@@ -1,5 +1,12 @@
 import { z } from "zod";
-
+import {
+  ExplorerFileSchema,
+  FileCreateSchema,
+  FileDeleteSchema,
+  FileRenameSchema,
+  FileSyncSchema,
+  FileUpdateSchema,
+} from "./file";
 import {
   RoomServiceMsg,
   CodeServiceMsg,
@@ -11,6 +18,7 @@ import { EditOpSchema, CursorSchema } from "./operation";
 import { ScrollSchema } from "./scroll";
 import { PointerSchema } from "./pointer";
 import { ExecutionResultSchema } from "./terminal";
+import { FileServiceMsg } from "./file";
 
 export const ClientToServerSchemas = {
   ping: z.tuple([]),
@@ -31,6 +39,11 @@ export const ClientToServerSchemas = {
   [CodeServiceMsg.EXEC]: z.tuple([z.boolean()]),
   [CodeServiceMsg.UPDATE_TERM]: z.tuple([ExecutionResultSchema]),
 
+  [FileServiceMsg.CREATE]: z.tuple([FileCreateSchema]),
+  [FileServiceMsg.RENAME]: z.tuple([FileRenameSchema]),
+  [FileServiceMsg.DELETE]: z.tuple([FileDeleteSchema]),
+  [FileServiceMsg.UPDATE]: z.tuple([FileUpdateSchema]),
+  [FileServiceMsg.SYNC]: z.tuple([FileSyncSchema]),
   [ScrollServiceMsg.UPDATE_SCROLL]: z.tuple([ScrollSchema]),
 
   [StreamServiceMsg.STREAM_READY]: z.tuple([]),
@@ -71,6 +84,30 @@ export const ServerToClientSchemas = {
   [CodeServiceMsg.EXEC]: z.tuple([z.boolean()]),
   [CodeServiceMsg.UPDATE_TERM]: z.tuple([ExecutionResultSchema]),
 
+  [FileServiceMsg.CREATE]: z.tuple([ExplorerFileSchema]),
+
+  [FileServiceMsg.RENAME]: z.tuple([
+    z.object({
+      fileId: z.string(),
+      name: z.string(),
+      language: z.string(),
+    }),
+  ]),
+
+  [FileServiceMsg.DELETE]: z.tuple([
+    z.object({
+      fileId: z.string(),
+    }),
+  ]),
+
+  [FileServiceMsg.UPDATE]: z.tuple([
+    z.object({
+      fileId: z.string(),
+      content: z.string(),
+    }),
+  ]),
+
+  [FileServiceMsg.SYNC_ALL]: z.tuple([z.array(ExplorerFileSchema)]),
   [ScrollServiceMsg.UPDATE_SCROLL]: z.tuple([z.string(), ScrollSchema]),
 
   [StreamServiceMsg.USER_READY]: z.tuple([z.string()]),

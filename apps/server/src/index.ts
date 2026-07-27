@@ -1,10 +1,16 @@
 import { SignalData } from "simple-peer";
 import {
+  FileServiceMsg,
   RoomServiceMsg,
   CodeServiceMsg,
   PointerServiceMsg,
   ScrollServiceMsg,
   StreamServiceMsg,
+  type FileCreate,
+  type FileRename,
+  type FileDelete,
+  type FileUpdate,
+  type FileSync,
   type Scroll,
   type Pointer,
   type Cursor,
@@ -12,6 +18,7 @@ import {
   type ClientToServerEvents,
   type ServerToClientEvents,
 } from "@collabx/types";
+import * as fileService from "@/services/file-service";
 import {
   ALLOWED_ORIGINS,
   getCorsHeaders,
@@ -132,6 +139,25 @@ io.on("connection", (socket) => {
   );
   socket.on(StreamServiceMsg.SPEAKER_STATE, (speakersOn: boolean) =>
     webRTCService.handleSpeakerState(socket, speakersOn),
+  );
+  socket.on(FileServiceMsg.CREATE, async (payload: FileCreate) =>
+    fileService.createFile(socket, io, payload),
+  );
+
+  socket.on(FileServiceMsg.RENAME, async (payload: FileRename) =>
+    fileService.renameFile(socket, io, payload),
+  );
+
+  socket.on(FileServiceMsg.DELETE, async (payload: FileDelete) =>
+    fileService.deleteFile(socket, io, payload),
+  );
+
+  socket.on(FileServiceMsg.UPDATE, async (payload: FileUpdate) =>
+    fileService.updateFile(socket, payload),
+  );
+
+  socket.on(FileServiceMsg.SYNC, async (payload: FileSync) =>
+    fileService.syncFiles(socket, payload),
   );
   socket.on(PointerServiceMsg.POINTER, (pointer: Pointer) =>
     pointerService.updatePointer(socket, pointer),
