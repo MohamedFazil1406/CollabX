@@ -3,8 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Copy, FilePlus2, FolderPlus, Pencil, Trash2 } from "lucide-react";
 
+import { FileServiceMsg } from "@collabx/types";
+
 import RenameFileDialog from "@/components/explorer/RenameFileDialog";
-import { ExplorerFile, useExplorerStore } from "@/store/explorer";
+import { socket } from "@/socket/client";
+import { ExplorerFile } from "@/store/explorer";
+import { useRoomStore } from "@/store/room";
 
 interface FileContextMenuProps {
   file: ExplorerFile;
@@ -23,9 +27,9 @@ export default function FileContextMenu({
 }: FileContextMenuProps) {
   const ref = useRef<HTMLDivElement>(null);
 
-  const [renameOpen, setRenameOpen] = useState(false);
+  const roomId = useRoomStore((state) => state.roomId);
 
-  const { deleteFile, createFile } = useExplorerStore();
+  const [renameOpen, setRenameOpen] = useState(false);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -58,11 +62,16 @@ export default function FileContextMenu({
         <button
           className="flex w-full items-center gap-3 px-4 py-2 text-sm hover:bg-zinc-800"
           onClick={() => {
-            createFile({
-              id: crypto.randomUUID(),
-              name: "untitled.ts",
-              language: "typescript",
-              content: "",
+            if (!roomId) return;
+
+            socket.emit(FileServiceMsg.CREATE, {
+              roomId,
+              file: {
+                id: crypto.randomUUID(),
+                name: "untitled.ts",
+                language: "typescript",
+                content: "",
+              },
             });
 
             onClose();
@@ -108,7 +117,13 @@ export default function FileContextMenu({
         <button
           className="flex w-full items-center gap-3 px-4 py-2 text-red-400 hover:bg-red-500/10"
           onClick={() => {
-            deleteFile(file.id);
+            if (!roomId) return;
+
+            socket.emit(FileServiceMsg.DELETE, {
+              roomId,
+              fileId: file.id,
+            });
+
             onClose();
           }}
         >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { useExplorerStore } from "@/store/explorer";
 
@@ -13,11 +13,14 @@ export function useActiveFile() {
     [files, activeFileId],
   );
 
-  const setContent = (content: string) => {
-    if (!activeFile) return;
+  const setContent = useCallback(
+    (content: string) => {
+      if (!activeFile) return;
 
-    updateContent(activeFile.id, content);
-  };
+      updateContent(activeFile.id, content);
+    },
+    [activeFile, updateContent],
+  );
 
   return {
     activeFile,

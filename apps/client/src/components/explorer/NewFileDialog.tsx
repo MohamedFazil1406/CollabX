@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 
-import { useExplorerStore } from "@/store/explorer";
+import { FileServiceMsg } from "@collabx/types";
+
+import { socket } from "@/socket/client";
+import { useRoomStore } from "@/store/room";
 import { getLanguageFromFilename } from "@/utils/fileLanguage";
 
 interface NewFileDialogProps {
@@ -11,7 +14,7 @@ interface NewFileDialogProps {
 }
 
 export default function NewFileDialog({ open, onClose }: NewFileDialogProps) {
-  const createFile = useExplorerStore((state) => state.createFile);
+  const roomId = useRoomStore((state) => state.roomId);
 
   const [name, setName] = useState("");
 
@@ -20,13 +23,16 @@ export default function NewFileDialog({ open, onClose }: NewFileDialogProps) {
   const handleCreate = () => {
     const trimmed = name.trim();
 
-    if (!trimmed) return;
+    if (!trimmed || !roomId) return;
 
-    createFile({
-      id: crypto.randomUUID(),
-      name: trimmed,
-      language: getLanguageFromFilename(trimmed),
-      content: "",
+    socket.emit(FileServiceMsg.CREATE, {
+      roomId,
+      file: {
+        id: crypto.randomUUID(),
+        name: trimmed,
+        language: getLanguageFromFilename(trimmed),
+        content: "",
+      },
     });
 
     setName("");

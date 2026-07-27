@@ -12,9 +12,10 @@ interface ExplorerStore {
   openTabs: string[];
   activeFileId: string | null;
 
+  setFiles: (files: ExplorerFile[]) => void;
   createFile: (file: ExplorerFile) => void;
   deleteFile: (id: string) => void;
-  renameFile: (id: string, name: string) => void;
+  renameFile: (id: string, name: string, language: string) => void;
 
   updateContent: (id: string, content: string) => void;
 
@@ -25,18 +26,16 @@ interface ExplorerStore {
 }
 
 export const useExplorerStore = create<ExplorerStore>((set) => ({
-  files: [
-    {
-      id: crypto.randomUUID(),
-      name: "main.ts",
-      language: "typescript",
-      content: "",
-    },
-  ],
+  files: [],
 
   openTabs: [],
 
   activeFileId: null,
+
+  setFiles: (files) =>
+    set({
+      files,
+    }),
 
   createFile: (file) =>
     set((state) => ({
@@ -50,17 +49,28 @@ export const useExplorerStore = create<ExplorerStore>((set) => ({
       activeFileId: state.activeFileId === id ? null : state.activeFileId,
     })),
 
-  renameFile: (id, name) =>
+  renameFile: (id, name, language) =>
     set((state) => ({
       files: state.files.map((file) =>
-        file.id === id ? { ...file, name } : file,
+        file.id === id
+          ? {
+              ...file,
+              name,
+              language,
+            }
+          : file,
       ),
     })),
 
   updateContent: (id, content) =>
     set((state) => ({
       files: state.files.map((file) =>
-        file.id === id ? { ...file, content } : file,
+        file.id === id
+          ? {
+              ...file,
+              content,
+            }
+          : file,
       ),
     })),
 

@@ -46,8 +46,12 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
         return;
       }
 
-      setContent(editor.getValue());
+      const content = editor.getValue();
 
+      // Keep the active file in sync locally
+      setContent(content);
+
+      // Send incremental edits to collaborators
       for (const change of event.changes) {
         const operation: EditOp = [
           change.text,
@@ -94,9 +98,6 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     }
   };
 
-  /**
-   * Initial code sync
-   */
   useEffect(() => {
     const handleSyncCode = (code: string) => {
       if (!editorRef.current) return;
@@ -112,9 +113,6 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     };
   }, []);
 
-  /**
-   * Remote edits
-   */
   useEffect(() => {
     const handleUpdateCode = (operation: EditOp) => {
       const editor = editorRef.current;
@@ -144,9 +142,6 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     };
   }, []);
 
-  /**
-   * Language sync
-   */
   useEffect(() => {
     const handleLanguage = (lang: string) => {
       setLanguage(lang);
@@ -159,9 +154,6 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     };
   }, [setLanguage]);
 
-  /**
-   * Load selected file into Monaco
-   */
   useEffect(() => {
     if (!editorRef.current || !activeFile) return;
 
@@ -169,9 +161,6 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     editorRef.current.setValue(activeFile.content);
   }, [activeFile]);
 
-  /**
-   * Update editor language when switching files
-   */
   useEffect(() => {
     if (!activeFile) return;
 
