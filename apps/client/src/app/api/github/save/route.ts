@@ -8,7 +8,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { owner, repo, path, sha, content, message } = await req.json();
+  const { owner, repo, path, sha, content, message, branch } = await req.json();
 
   if (!owner || !repo || !path || !sha || content === undefined) {
     return NextResponse.json(
@@ -32,6 +32,7 @@ export async function PUT(req: NextRequest) {
         message: message ?? `Update ${path} from CollabX`,
         content: encoded,
         sha,
+        ...(branch && { branch }),
       }),
     },
   );

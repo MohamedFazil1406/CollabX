@@ -34,7 +34,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
 
   const { language, setLanguage } = useEditorStore();
   const { activeFile, setContent } = useActiveFile();
-  const { save } = useGithubSave();
+  const { save, isSaving } = useGithubSave();
 
   // GitHub files are edited locally for now
   const isGithubFile = !!activeFile?.github;
@@ -192,6 +192,30 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
       socket.off(CodeServiceMsg.UPDATE_LANG, onLanguage);
     };
   }, [isGithubFile, setLanguage]);
+
+  useEffect(() => {
+    const handleSave = async (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      if (event.key.toLowerCase() !== "s") return;
+
+      event.preventDefault();
+
+      if (!activeFile?.github) return;
+
+      try {
+        await save();
+        console.log("GitHub file saved successfully.");
+      } catch (error) {
+        console.error("Failed to save GitHub file:", error);
+      }
+    };
+
+    window.addEventListener("keydown", handleSave);
+
+    return () => {
+      window.removeEventListener("keydown", handleSave);
+    };
+  }, [activeFile, save]);
 
   useEffect(() => {
     const editor = editorRef.current;

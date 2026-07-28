@@ -5,7 +5,7 @@ interface TerminalStore {
   output: ExecutionResult | null;
   executing: boolean;
 
-  setOutput: (output: ExecutionResult) => void;
+  setOutput: (output: ExecutionResult | null) => void;
   setExecuting: (executing: boolean) => void;
   clear: () => void;
 }
