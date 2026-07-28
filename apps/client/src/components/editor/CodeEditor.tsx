@@ -29,6 +29,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   useRemotePointer();
 
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
+
   const isRemoteUpdate = useRef(false);
 
   const { language, setLanguage } = useEditorStore();
@@ -48,10 +49,8 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
 
       const content = editor.getValue();
 
-      // Keep the active file in sync locally
       setContent(content);
 
-      // Send incremental edits to collaborators
       for (const change of event.changes) {
         const operation: EditOp = [
           change.text,
@@ -99,22 +98,25 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   };
 
   useEffect(() => {
-    const handleSyncCode = (code: string) => {
-      if (!editorRef.current) return;
+    const onSyncCode = (code: string) => {
+      const editor = editorRef.current;
+      if (!editor) return;
+
+      if (editor.getValue() === code) return;
 
       isRemoteUpdate.current = true;
-      editorRef.current.setValue(code);
+      editor.setValue(code);
     };
 
-    socket.on(CodeServiceMsg.SYNC_CODE, handleSyncCode);
+    socket.on(CodeServiceMsg.SYNC_CODE, onSyncCode);
 
     return () => {
-      socket.off(CodeServiceMsg.SYNC_CODE, handleSyncCode);
+      socket.off(CodeServiceMsg.SYNC_CODE, onSyncCode);
     };
   }, []);
 
   useEffect(() => {
-    const handleUpdateCode = (operation: EditOp) => {
+    const onUpdateCode = (operation: EditOp) => {
       const editor = editorRef.current;
       if (!editor) return;
 
@@ -135,36 +137,40 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
       ]);
     };
 
-    socket.on(CodeServiceMsg.UPDATE_CODE, handleUpdateCode);
+    socket.on(CodeServiceMsg.UPDATE_CODE, onUpdateCode);
 
     return () => {
-      socket.off(CodeServiceMsg.UPDATE_CODE, handleUpdateCode);
+      socket.off(CodeServiceMsg.UPDATE_CODE, onUpdateCode);
     };
   }, []);
 
   useEffect(() => {
-    const handleLanguage = (lang: string) => {
+    const onLanguage = (lang: string) => {
       setLanguage(lang);
     };
 
-    socket.on(CodeServiceMsg.UPDATE_LANG, handleLanguage);
+    socket.on(CodeServiceMsg.UPDATE_LANG, onLanguage);
 
     return () => {
-      socket.off(CodeServiceMsg.UPDATE_LANG, handleLanguage);
+      socket.off(CodeServiceMsg.UPDATE_LANG, onLanguage);
     };
   }, [setLanguage]);
 
   useEffect(() => {
-    if (!editorRef.current || !activeFile) return;
+    const editor = editorRef.current;
+
+    if (!editor || !activeFile) return;
+
+    if (editor.getValue() === activeFile.content) return;
 
     isRemoteUpdate.current = true;
-    editorRef.current.setValue(activeFile.content);
+    editor.setValue(activeFile.content);
   }, [activeFile]);
 
   useEffect(() => {
-    if (!activeFile) return;
-
-    setLanguage(activeFile.language);
+    if (activeFile) {
+      setLanguage(activeFile.language);
+    }
   }, [activeFile, setLanguage]);
 
   return (
@@ -173,7 +179,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
         height="100%"
         theme="vs-dark"
         language={language}
-        value={activeFile?.content ?? ""}
+        defaultValue=""
         onMount={handleMount}
         options={{
           automaticLayout: true,

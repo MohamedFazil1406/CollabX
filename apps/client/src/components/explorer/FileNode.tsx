@@ -2,14 +2,19 @@
 
 import { FileText, Trash2 } from "lucide-react";
 
+import { FileServiceMsg } from "@collabx/types";
+
+import { socket } from "@/socket/client";
 import { useExplorerStore, type ExplorerFile } from "@/store/explorer";
+import { useRoomStore } from "@/store/room";
 
 interface FileNodeProps {
   file: ExplorerFile;
 }
 
 export default function FileNode({ file }: FileNodeProps) {
-  const { activeFileId, openFile, deleteFile } = useExplorerStore();
+  const { activeFileId, openFile } = useExplorerStore();
+  const roomId = useRoomStore((state) => state.roomId);
 
   const isActive = activeFileId === file.id;
 
@@ -28,7 +33,14 @@ export default function FileNode({ file }: FileNodeProps) {
       </button>
 
       <button
-        onClick={() => deleteFile(file.id)}
+        onClick={() => {
+          if (!roomId) return;
+
+          socket.emit(FileServiceMsg.DELETE, {
+            roomId,
+            fileId: file.id,
+          });
+        }}
         className="rounded p-1 opacity-0 transition-opacity hover:bg-zinc-700 group-hover:opacity-100"
         title="Delete file"
       >
