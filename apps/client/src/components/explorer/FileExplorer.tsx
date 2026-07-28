@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import NewFileDialog from "@/components/explorer/NewFileDialog";
 import FileTree from "@/components/explorer/FileTree";
+import GithubExplorer from "@/components/github/GithubExplorer";
 
 export default function FileExplorer() {
   const [open, setOpen] = useState(false);
@@ -23,7 +24,11 @@ export default function FileExplorer() {
         </div>
 
         <div className="flex-1 overflow-y-auto">
+          {/* Local Project Files */}
           <FileTree />
+
+          {/* GitHub Repositories */}
+          <GithubExplorer />
         </div>
       </aside>
 

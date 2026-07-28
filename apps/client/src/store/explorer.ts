@@ -5,6 +5,13 @@ export interface ExplorerFile {
   name: string;
   language: string;
   content: string;
+
+  github?: {
+    owner: string;
+    repo: string;
+    path: string;
+    sha: string;
+  };
 }
 
 interface ExplorerStore {

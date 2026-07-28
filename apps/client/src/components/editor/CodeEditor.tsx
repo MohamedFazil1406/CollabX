@@ -12,6 +12,7 @@ import RemoteCursorLayer from "@/components/editor/RemoteCursorLayer";
 import { useRemoteCursor } from "@/hooks/useRemoteCursors";
 import { useRemotePointer } from "@/hooks/useRemotePointer";
 import { useActiveFile } from "@/hooks/useActiveFile";
+import { useGithubSave } from "@/hooks/useGithubSave";
 
 import {
   CodeServiceMsg,
@@ -29,17 +30,22 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   useRemotePointer();
 
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
-
   const isRemoteUpdate = useRef(false);
 
   const { language, setLanguage } = useEditorStore();
   const { activeFile, setContent } = useActiveFile();
+  const { save } = useGithubSave();
+
+  // GitHub files are edited locally for now
+  const isGithubFile = !!activeFile?.github;
 
   const handleMount: OnMount = (editor) => {
     editorRef.current = editor;
 
-    socket.emit(CodeServiceMsg.SYNC_CODE);
-    socket.emit(CodeServiceMsg.SYNC_LANG);
+    if (!isGithubFile) {
+      socket.emit(CodeServiceMsg.SYNC_CODE);
+      socket.emit(CodeServiceMsg.SYNC_LANG);
+    }
 
     editor.onDidChangeModelContent((event) => {
       if (isRemoteUpdate.current) {
@@ -50,6 +56,8 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
       const content = editor.getValue();
 
       setContent(content);
+
+      if (isGithubFile) return;
 
       for (const change of event.changes) {
         const operation: EditOp = [
@@ -65,6 +73,8 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     });
 
     editor.onDidChangeCursorSelection((e) => {
+      if (isGithubFile) return;
+
       const cursor: Cursor = [
         e.selection.positionLineNumber,
         e.selection.positionColumn,
@@ -81,6 +91,8 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
 
     if (domNode) {
       const handleMouseMove = (event: MouseEvent) => {
+        if (isGithubFile) return;
+
         const rect = domNode.getBoundingClientRect();
 
         socket.emit(PointerServiceMsg.POINTER, {
@@ -98,6 +110,8 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
   };
 
   useEffect(() => {
+    if (isGithubFile) return;
+
     const onSyncCode = (code: string) => {
       const editor = editorRef.current;
       if (!editor) return;
@@ -113,9 +127,11 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     return () => {
       socket.off(CodeServiceMsg.SYNC_CODE, onSyncCode);
     };
-  }, []);
+  }, [isGithubFile]);
 
   useEffect(() => {
+    if (isGithubFile) return;
+
     const onUpdateCode = (operation: EditOp) => {
       const editor = editorRef.current;
       if (!editor) return;
@@ -142,9 +158,30 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     return () => {
       socket.off(CodeServiceMsg.UPDATE_CODE, onUpdateCode);
     };
-  }, []);
+  }, [isGithubFile]);
 
   useEffect(() => {
+    const handler = async (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+
+        try {
+          await save();
+          console.log("GitHub file saved");
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+
+    return () => window.removeEventListener("keydown", handler);
+  }, [save]);
+
+  useEffect(() => {
+    if (isGithubFile) return;
+
     const onLanguage = (lang: string) => {
       setLanguage(lang);
     };
@@ -154,7 +191,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
     return () => {
       socket.off(CodeServiceMsg.UPDATE_LANG, onLanguage);
     };
-  }, [setLanguage]);
+  }, [isGithubFile, setLanguage]);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -179,7 +216,7 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
         height="100%"
         theme="vs-dark"
         language={language}
-        defaultValue=""
+        value={activeFile?.content ?? ""}
         onMount={handleMount}
         options={{
           automaticLayout: true,
@@ -190,9 +227,13 @@ export default function CodeEditor({ roomId }: CodeEditorProps) {
         }}
       />
 
-      <RemoteCursorLayer editor={editorRef.current} />
-      <RemoteSelectionLayer editor={editorRef.current} />
-      <PointerLayer />
+      {!isGithubFile && (
+        <>
+          <RemoteCursorLayer editor={editorRef.current} />
+          <RemoteSelectionLayer editor={editorRef.current} />
+          <PointerLayer />
+        </>
+      )}
     </div>
   );
 }
